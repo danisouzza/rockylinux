@@ -1,0 +1,58 @@
+sudo dnf update
+
+sudo dnf install httpd httpd-tools
+sudo systemctl enable httpd
+sudo systemctl start httpd
+sudo systemctl status httpd
+
+sudo nano /etc/httpd/conf/httpd.conf
+ServerName 127.0.0.1
+
+sudo firewall-cmd --permanent --zone=public --add-service=http
+sudo firewall-cmd --permanent --zone=public --add-service=https
+sudo firewall-cmd --reload
+
+sudo dnf install mariadb-server mariadb -y
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+sudo systemctl status mariadb
+
+sudo mysql_secure_installation
+
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+sudo dnf install http://rpms.remirepo.net/enterprise/remi-release-9.rpm
+sudo dnf module list php
+sudo dnf module reset php
+sudo dnf module enable php:remi-8.1
+sudo dnf install php php-opcache php-gd php-curl php-mysqlnd
+
+sudo systemctl start php-fpm
+sudo systemctl enable php-fpm
+sudo systemctl status php-fpm
+
+sudo setsebool -P httpd_execmem 1
+sudo systemctl restart httpd
+
+sudo dnf install php php-{mbstring,mysqli,xml,cli,ldap,openssl,xmlrpc,pecl-apcu,zip,curl,gd,json,session,imap} -y
+
+sudo wget https://github.com/glpi-project/glpi/releases/download/10.0.12/glpi-10.0.12.tgz
+sudo tar -xvf  glpi-10.0.12.tgz -C /var/www/html/
+sudo chown -R apache:apache /var/www/html/glpi
+sudo chmod -R 755 /var/www/html/glpi
+
+sudo dnf -y install policycoreutils-python-utils
+sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/html/glpi(/.*)?"
+sudo restorecon -Rv /var/www/html/glpi
+
+sudo systemctl restart httpd
+
+wordpress
+
+cd /tmp && wget http://wordpress.org/latest.tar.gz
+sudo tar -xvzf latest.tar.gz -C /var/www/html
+sudo chown -R apache:apache /var/www/html/wordpress
+sudo chmod -R 775 /var/www/html/wordpress
+
+sudo dnf install policycoreutils-python-utils
+sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/www/html/wordpress(/.*)?"
+sudo restorecon -Rv /var/www/html/wordpress
