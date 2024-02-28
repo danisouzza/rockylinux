@@ -1,0 +1,66 @@
+sudo dnf install samba samba-common samba-client 
+
+sudo mkdir -p /srv/samba/publico
+sudo chmod -R 755 /srv/samba/publico
+sudo chown -R  nobody:nobody /srv/samba/publico
+sudo chcon -t samba_share_t /srv/samba/publico
+
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
+
+sudo nano /etc/samba/smb.conf
+
+[global]
+workgroup = WORKGROUP
+server string = Samba Server %v
+netbios name = rhel-9
+security = user
+map to guest = bad user
+dns proxy = no
+ntlm auth = true
+
+
+
+[Public]
+path =  /srv/samba/publico
+browsable =yes
+writable = yes
+guest ok = yes
+read only = no
+
+sudo testparm
+
+sudo systemctl start smb
+sudo systemctl enable smb
+sudo systemctl start nmb
+sudo systemctl enable nmb
+
+sudo systemctl status smb
+sudo systemctl status nmb
+
+sudo firewall-cmd --permanent --zone=public --add-service=samba
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-services
+
+sudo useradd samba
+sudo smbpasswd -a samba
+
+sudo groupadd smb_group
+sudo usermod -g smb_group samba
+
+sudo mkdir -p /srv/samba/privado
+sudo chmod -R 770 /srv/samba/privado
+sudo chcon -t samba_share_t /srv/samba/privado
+sudo chown -R root:smb_group /srv/samba/privado
+
+sudo nano /etc/samba/smb.conf
+
+[Private]
+path = /srv/samba/privado
+valid users = @smb_group
+guest ok = no
+writable = yes
+browsable = yes
+
+testparm
+
+sudo systemctl restart smb
